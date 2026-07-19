@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.sqlite3
+*.db
+.env
+.venv/
+.venv-1/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node / frontend
+node_modules/
+dist/
+build/
+.npm/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Uploads / local artifacts
+uploads/*
+!uploads/.gitkeep
