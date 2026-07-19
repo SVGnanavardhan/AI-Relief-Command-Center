@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: ai-relief-command-center
+    env: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.8
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: SECRET_KEY
+        sync: false

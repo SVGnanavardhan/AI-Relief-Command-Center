@@ -7,11 +7,15 @@ __pycache__/
 *.sqlite3
 *.db
 .env
+.env.*
 .venv/
 .venv-1/
 .pytest_cache/
 .coverage
 htmlcov/
+.mypy_cache/
+.pytype/
+*.log
 
 # Node / frontend
 node_modules/
@@ -19,10 +23,19 @@ dist/
 build/
 .npm/
 
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
 # OS files
 .DS_Store
 Thumbs.db
 
-# Uploads / local artifacts
+# Local uploads and generated data
+backend/app/uploads/**
+backend/uploads/**
 uploads/*
 !uploads/.gitkeep
+*.bak
