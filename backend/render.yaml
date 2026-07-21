@@ -12,7 +12,7 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: CORS_ORIGINS
-        value: "*"
+        value: "https://ai-relief-command-center-1.onrender.com"
       - key: DATABASE_URL
         sync: false
       - key: SUPABASE_URL

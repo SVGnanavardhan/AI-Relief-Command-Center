@@ -52,10 +52,15 @@ settings: dict[str, Any] = get_settings()
 UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_ROOT)), name="uploads")
 
+_cors_origins = settings["cors_origins"]
+_allow_credentials = "*" not in _cors_origins
+if "*" in _cors_origins:
+    _cors_origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings["cors_origins"],
-    allow_credentials=True,
+    allow_origins=_cors_origins,
+    allow_credentials=_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
