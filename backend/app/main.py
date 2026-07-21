@@ -12,14 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from starlette.datastructures import UploadFile as StarletteUploadFile
 
-from app.auth import (
-    authenticate_user,
-    create_access_token,
-    create_refresh_token,
-    get_current_user,
-    get_user_by_email,
-    hash_password,
-)
+from app.auth import authenticate_user, get_current_user, get_user_by_email, upsert_user_from_supabase_profile
 from app.config import get_settings
 from app.crud import (
     assign_team_to_report,
@@ -331,26 +324,39 @@ async def operations(db: Session = Depends(get_db)) -> Dict[str, Any]:
 
 @app.post("/api/auth/register")
 async def register_user(payload: Dict[str, Any], db: Session = Depends(get_db)) -> Dict[str, Any]:
-    email = str(payload.get("email") or "").strip().lower()
-    if not email or not payload.get("password"):
-        raise HTTPException(status_code=400, detail="Email and password are required")
-    if get_user_by_email(db, email):
-        raise HTTPException(status_code=409, detail="User already exists")
+    access_token = str(payload.get("access_token") or "").strip()
+    if access_token:
+        user = get_current_user(db, access_token)
+        return {
+            "access_token": access_token,
+            "user": {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+                "phone": user.phone,
+                "role": user.role,
+                "avatar": user.avatar,
+            },
+        }
 
-    user = User(
-        name=str(payload.get("name") or "User").strip(),
-        email=email,
-        password_hash=hash_password(str(payload.get("password"))),
-        phone=payload.get("phone"),
-        role=str(payload.get("role") or "citizen").strip().lower(),
-        is_active=1,
+    email = str(payload.get("email") or "").strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required")
+
+    user = upsert_user_from_supabase_profile(
+        db,
+        {
+            "id": str(payload.get("supabase_user_id") or "").strip() or None,
+            "email": email,
+            "user_metadata": {
+                "full_name": str(payload.get("name") or "User").strip(),
+                "phone": payload.get("phone"),
+                "role": str(payload.get("role") or "citizen").strip().lower(),
+            },
+            "role": str(payload.get("role") or "citizen").strip().lower(),
+        },
     )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
     return {
-        "access_token": create_access_token(user.email, user.role),
-        "refresh_token": create_refresh_token(user.email, user.role),
         "user": {
             "id": user.id,
             "name": user.name,
@@ -364,14 +370,13 @@ async def register_user(payload: Dict[str, Any], db: Session = Depends(get_db)) 
 
 @app.post("/api/auth/login")
 async def login_user(payload: Dict[str, Any], db: Session = Depends(get_db)) -> Dict[str, Any]:
-    email = str(payload.get("email") or "").strip().lower()
-    password = str(payload.get("password") or "")
-    user = authenticate_user(db, email, password)
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+    access_token = str(payload.get("access_token") or payload.get("token") or "").strip()
+    if not access_token:
+        raise HTTPException(status_code=400, detail="Supabase access token is required")
+
+    user = get_current_user(db, access_token)
     return {
-        "access_token": create_access_token(user.email, user.role),
-        "refresh_token": create_refresh_token(user.email, user.role),
+        "access_token": access_token,
         "user": {
             "id": user.id,
             "name": user.name,
@@ -380,7 +385,6 @@ async def login_user(payload: Dict[str, Any], db: Session = Depends(get_db)) -> 
             "role": user.role,
             "avatar": user.avatar,
         },
-        "remember_me": bool(payload.get("remember_me", False)),
     }
 
 
@@ -410,20 +414,20 @@ async def logout_user() -> Dict[str, str]:
 
 @app.post("/api/auth/refresh")
 async def refresh_token(payload: Dict[str, Any], db: Session = Depends(get_db)) -> Dict[str, Any]:
-    refresh_token_value = str(payload.get("refresh_token") or "").strip()
-    if not refresh_token_value:
-        raise HTTPException(status_code=401, detail="Missing refresh token")
-    try:
-        decoded = jwt.decode(refresh_token_value, JWT_SECRET, algorithms=["HS256"])
-    except Exception as exc:
-        raise HTTPException(status_code=401, detail="Invalid refresh token") from exc
-    email = decoded.get("sub")
-    user = get_user_by_email(db, email)
-    if not user or not user.is_active:
-        raise HTTPException(status_code=401, detail="User not found")
+    access_token = str(payload.get("access_token") or payload.get("token") or "").strip()
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Missing access token")
+    user = get_current_user(db, access_token)
     return {
-        "access_token": create_access_token(user.email, user.role),
-        "refresh_token": create_refresh_token(user.email, user.role),
+        "access_token": access_token,
+        "user": {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "phone": user.phone,
+            "role": user.role,
+            "avatar": user.avatar,
+        },
     }
 
 

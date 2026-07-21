@@ -2,6 +2,7 @@ import os
 from datetime import datetime, timezone
 from typing import Generator
 
+from dotenv import load_dotenv
 from sqlalchemy import (
     Column,
     DateTime,
@@ -16,6 +17,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
+load_dotenv()
+
 Base = declarative_base()
 
 
@@ -25,8 +28,9 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
     email = Column(String(255), nullable=False, unique=True, index=True)
-    password_hash = Column(String(255), nullable=False)
+    password_hash = Column(String(255), nullable=True)
     phone = Column(String(50), nullable=True)
+    supabase_user_id = Column(String(255), nullable=True, index=True)
     role = Column(String(50), nullable=False, default="citizen")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
@@ -217,10 +221,10 @@ class Role(Base):
     name = Column(String(100), nullable=False, unique=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-DATABASE_URL = os.getenv("DATABASE_URL") or os.getenv("SUPABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
 if not DATABASE_URL:
-    DATABASE_URL = "sqlite:///./ai_relief.db"
+    raise RuntimeError("DATABASE_URL must be set to a PostgreSQL connection string")
 
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace(
@@ -228,6 +232,9 @@ if DATABASE_URL.startswith("postgres://"):
         "postgresql+psycopg2://",
         1,
     )
+elif DATABASE_URL.startswith("https://") or DATABASE_URL.startswith("http://"):
+    raise RuntimeError("DATABASE_URL must be a PostgreSQL connection string, not the Supabase project URL")
+
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -276,6 +283,13 @@ def init_db() -> None:
 
         if "users" not in inspector.get_table_names():
             Base.metadata.create_all(bind=engine)
+
+        if "users" in inspector.get_table_names():
+            user_columns = {col["name"] for col in inspector.get_columns("users")}
+            if "supabase_user_id" not in user_columns:
+                conn.execute(text("ALTER TABLE users ADD COLUMN supabase_user_id VARCHAR(255)"))
+            if "password_hash" not in user_columns:
+                conn.execute(text("ALTER TABLE users ADD COLUMN password_hash VARCHAR(255)"))
 
 
 def get_db() -> Generator[Session, None, None]:

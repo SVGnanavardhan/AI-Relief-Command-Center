@@ -1,6 +1,7 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
+import { supabase } from '../lib/format';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -8,18 +9,46 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    async function checkSession() {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        navigate('/dashboard');
+      }
+    }
+    checkSession();
+  }, [navigate]);
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError('');
+
     try {
-      const response = await api.post('/auth/login', { email, password, remember_me: true });
-      const token = response.data.access_token;
-      const refreshToken = response.data.refresh_token;
-      localStorage.setItem('access_token', token);
-      localStorage.setItem('refresh_token', refreshToken);
-      navigate('/');
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (signInError) {
+        const details = signInError.message || 'Unable to sign in';
+        throw new Error(details);
+      }
+
+      if (!data.session?.access_token) {
+        throw new Error('No Supabase session was returned. Please try again.');
+      }
+
+      const response = await api.post('/auth/login', {
+        access_token: data.session.access_token,
+      });
+
+      localStorage.setItem('access_token', data.session.access_token);
+      localStorage.setItem('refresh_token', data.session.refresh_token ?? '');
+      localStorage.setItem('auth_user', JSON.stringify(response.data.user));
+      navigate('/dashboard');
     } catch (err: any) {
-      setError(err?.response?.data?.detail || 'Unable to sign in');
+      const message = err?.message || err?.response?.data?.detail || 'Unable to sign in';
+      setError(message);
     }
   }
 

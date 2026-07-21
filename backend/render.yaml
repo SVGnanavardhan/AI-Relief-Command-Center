@@ -21,7 +21,7 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      - key: JWT_SECRET
+      - key: SUPABASE_JWT_SECRET
         sync: false
       - key: SECRET_KEY
         sync: false

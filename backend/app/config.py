@@ -9,7 +9,7 @@ load_dotenv()
 
 @lru_cache
 def get_settings() -> dict[str, Any]:
-    database_url = os.getenv("DATABASE_URL") or os.getenv("SUPABASE_URL")
+    database_url = os.getenv("DATABASE_URL", "").strip()
     if not database_url:
         raise RuntimeError("DATABASE_URL must be set to a PostgreSQL connection string")
 
@@ -25,6 +25,7 @@ def get_settings() -> dict[str, Any]:
         "supabase_key": os.getenv("SUPABASE_KEY") or os.getenv("SUPABASE_ANON_KEY", ""),
         "supabase_anon_key": os.getenv("SUPABASE_ANON_KEY", ""),
         "supabase_service_role_key": os.getenv("SUPABASE_SERVICE_ROLE_KEY", ""),
-        "jwt_secret": os.getenv("JWT_SECRET", "change-me-in-production"),
+        "jwt_secret": os.getenv("SUPABASE_JWT_SECRET", os.getenv("JWT_SECRET", "change-me-in-production")),
         "secret_key": os.getenv("SECRET_KEY", "change-me-in-production"),
+        "supabase_jwt_secret": os.getenv("SUPABASE_JWT_SECRET", ""),
     }

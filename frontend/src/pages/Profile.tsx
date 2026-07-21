@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
+import { supabase } from '../lib/format';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -15,7 +16,17 @@ export default function Profile() {
 
     api.get('/auth/me', { headers: { Authorization: `Bearer ${token}` } })
       .then((response) => setProfile(response.data))
-      .catch(() => navigate('/login'));
+      .catch(async () => {
+        const { data } = await supabase.auth.getSession();
+        if (!data.session?.access_token) {
+          navigate('/login');
+          return;
+        }
+        localStorage.setItem('access_token', data.session.access_token);
+        api.get('/auth/me', { headers: { Authorization: `Bearer ${data.session.access_token}` } })
+          .then((profileResponse) => setProfile(profileResponse.data))
+          .catch(() => navigate('/login'));
+      });
   }, [navigate]);
 
   if (!profile) return null;

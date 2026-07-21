@@ -1,5 +1,5 @@
-import { NavLink, Outlet } from 'react-router-dom';
-import { LogIn, UserPlus, UserCircle2, Settings as SettingsIcon } from 'lucide-react';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { LogIn, UserPlus, UserCircle2, Settings as SettingsIcon, LogOut } from 'lucide-react';
 import {
   LayoutDashboard,
   FilePlus2,
@@ -9,6 +9,7 @@ import {
   Radio,
   Briefcase,
 } from 'lucide-react';
+import { supabase } from '../lib/format';
 
 const nav = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -26,6 +27,16 @@ const authLinks = [
 ];
 
 export default function Layout() {
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('auth_user');
+    navigate('/login');
+  }
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(248,113,113,0.16),_transparent_24%),linear-gradient(135deg,_#f8fafc_0%,_#eef2ff_100%)] text-slate-800">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col lg:flex-row">
@@ -78,6 +89,14 @@ export default function Layout() {
                   {label}
                 </NavLink>
               ))}
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium whitespace-nowrap text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900"
+              >
+                <LogOut className="h-4 w-4" aria-hidden />
+                Logout
+              </button>
             </div>
           </nav>
         </header>

@@ -39,7 +39,7 @@ pip install -r requirements.txt
 ### Frontend
 
 ```bash
-cd frontend/frontend-src
+cd frontend
 npm install
 npm run build
 ```
@@ -55,7 +55,7 @@ python verify_database.py
 ## Deployment
 
 - Backend: Render via [backend/render.yaml](backend/render.yaml)
-- Frontend: Vercel via [frontend/frontend-src/vercel.json](frontend/frontend-src/vercel.json)
+- Frontend: Vercel via [frontend/vercel.json](frontend/vercel.json)
 - Database: PostgreSQL/Supabase-compatible storage
 
 ## License
