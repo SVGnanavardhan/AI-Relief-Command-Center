@@ -261,46 +261,41 @@ export default function Dashboard() {
         <StatCard label="Resources Used" value={data.resources_used} icon={Package} accent="bg-slate-100 text-slate-700" description="Operational stock consumed" clickable onClick={() => setSelectedCategory('all')} />
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium text-slate-500">Live mission progress</p>
-            <p className="mt-1 text-lg font-semibold text-slate-900">{String(simulationStatus.message ?? 'No simulation running.')}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-2xl font-semibold text-slate-900">{Number(simulationStatus.completed ?? 0)}/{Number(simulationStatus.total ?? 0)}</p>
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">incidents processed</p>
-          </div>
-        </div>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
-          <div className="h-full rounded-full bg-cyan-600 transition-all" style={{ width: `${Math.max(0, Math.min(100, Number(simulationStatus.progress ?? 0)))}%` }} />
-        </div>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Flood" value={data.flood_cases} icon={Waves} accent="bg-cyan-100 text-cyan-700" description="Water-related alerts" clickable onClick={() => setSelectedCategory('flood')} />
-        <StatCard label="Fire" value={data.fire_cases} icon={Flame} accent="bg-orange-100 text-orange-700" description="Fire response demand" clickable onClick={() => setSelectedCategory('fire')} />
-        <StatCard label="Shelter" value={data.shelter_requests} icon={Home} accent="bg-violet-100 text-violet-700" description="Temporary housing needs" clickable onClick={() => setSelectedCategory('shelter')} />
-        <StatCard label="Food" value={data.food_requests} icon={UtensilsCrossed} accent="bg-emerald-100 text-emerald-700" description="Food and water relief" clickable onClick={() => setSelectedCategory('food')} />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {isAdmin && (
         <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-slate-500">Live mission progress</p>
+              <p className="mt-1 text-lg font-semibold text-slate-900">{String(simulationStatus.message ?? 'No simulation running.')}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-semibold text-slate-900">{Number(simulationStatus.completed ?? 0)}/{Number(simulationStatus.total ?? 0)}</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">incidents processed</p>
+            </div>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-full rounded-full bg-cyan-600 transition-all" style={{ width: `${Math.max(0, Math.min(100, Number(simulationStatus.progress ?? 0)))}%` }} />
+          </div>
+        </div>
+      )}
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="group rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
           <p className="text-sm font-medium text-slate-500">Average Urgency</p>
-          <p className="mt-2 text-3xl font-semibold text-slate-900">{averageUrgency}%</p>
-          <p className="mt-1 text-xs text-slate-500">Priority pressure across active incidents</p>
+          <p className="mt-2 text-3xl font-semibold text-slate-900">{data.total_reports > 0 ? `${averageUrgency}%` : '—'}</p>
+          <p className="mt-1 text-xs text-slate-500">{data.total_reports > 0 ? 'Priority pressure across active incidents' : 'Submit reports to see urgency'}</p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
+        <div className="group rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
           <p className="text-sm font-medium text-slate-500">AI Confidence</p>
-          <p className="mt-2 text-3xl font-semibold text-slate-900">{averageConfidence}%</p>
-          <p className="mt-1 text-xs text-slate-500">Average model reliability score</p>
+          <p className="mt-2 text-3xl font-semibold text-slate-900">{data.total_reports > 0 ? `${averageConfidence}%` : '—'}</p>
+          <p className="mt-1 text-xs text-slate-500">{data.total_reports > 0 ? 'Average model reliability score' : 'No AI analysis yet'}</p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Resources Deployed</p>
-          <p className="mt-2 text-3xl font-semibold text-slate-900">{data.recent_incidents.length * 3}</p>
-          <p className="mt-1 text-xs text-slate-500">Responders and support units</p>
+        <div className="group rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
+          <p className="text-sm font-medium text-slate-500">Resources Used</p>
+          <p className="mt-2 text-3xl font-semibold text-slate-900">{data.resources_used || 0}</p>
+          <p className="mt-1 text-xs text-slate-500">{data.resources_used > 0 ? 'Operational stock consumed' : 'No resources deployed yet'}</p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
+        <div className="group rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
           <p className="text-sm font-medium text-slate-500">System Pulse</p>
           <div className="mt-2 flex items-center gap-2 text-lg font-semibold text-emerald-600">
             <Sparkles className="h-5 w-5" /> Online
@@ -467,24 +462,38 @@ export default function Dashboard() {
               <h3 className="text-lg font-semibold text-slate-900">AI insights</h3>
               <p className="text-sm text-slate-500">Operational recommendations generated from the current incident load</p>
             </div>
-            <Link to="/operations" className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-2 text-sm font-medium text-white">
+            <Link to="/operations" className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-2 text-sm font-medium text-white transition-all hover:bg-slate-800 active:scale-95">
               Open operations <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="mt-3 grid gap-3 md:grid-cols-3">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-              <div className="text-sm font-semibold text-slate-900">Priority focus</div>
-              <div className="mt-1 text-sm text-slate-600">Medical and rescue cases should be triaged first.</div>
+          {data.total_reports > 0 ? (
+            <div className="mt-3 grid gap-3 md:grid-cols-3">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 transition-all duration-200 hover:border-slate-300 hover:shadow-sm">
+                <div className="text-sm font-semibold text-slate-900">Priority focus</div>
+                <div className="mt-1 text-sm text-slate-600">
+                  {data.critical_incidents > 0 ? `${data.critical_incidents} critical incident${data.critical_incidents > 1 ? 's' : ''} need immediate attention.` : 'No critical incidents at this time.'}
+                </div>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 transition-all duration-200 hover:border-slate-300 hover:shadow-sm">
+                <div className="text-sm font-semibold text-slate-900">Team readiness</div>
+                <div className="mt-1 text-sm text-slate-600">
+                  {data.available_teams > 0 ? `${data.available_teams} team${data.available_teams > 1 ? 's' : ''} ready for dispatch.` : 'All teams are currently assigned.'}
+                </div>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 transition-all duration-200 hover:border-slate-300 hover:shadow-sm">
+                <div className="text-sm font-semibold text-slate-900">Incident load</div>
+                <div className="mt-1 text-sm text-slate-600">
+                  {data.pending_incidents > 0 ? `${data.pending_incidents} incident${data.pending_incidents > 1 ? 's' : ''} pending review.` : 'All incidents have been reviewed.'}
+                </div>
+              </div>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-              <div className="text-sm font-semibold text-slate-900">Team readiness</div>
-              <div className="mt-1 text-sm text-slate-600">Keep reserve teams positioned for rapid reassignment.</div>
+          ) : (
+            <div className="mt-3 rounded-2xl border border-dashed border-slate-200 py-6 text-center">
+              <Brain className="mx-auto h-8 w-8 text-slate-300" />
+              <p className="mt-2 text-sm text-slate-400">No incident data yet.</p>
+              <p className="text-xs text-slate-400">Submit reports to generate AI insights.</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-              <div className="text-sm font-semibold text-slate-900">Resource pressure</div>
-              <div className="mt-1 text-sm text-slate-600">Shelter and medical supplies remain the biggest risk area.</div>
-            </div>
-          </div>
+          )}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
           <div>
