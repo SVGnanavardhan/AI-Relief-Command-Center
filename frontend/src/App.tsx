@@ -4,29 +4,36 @@ import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import { LoadingState } from './components/StatusPill';
 
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const SubmitReport = lazy(() => import('./pages/SubmitReport'));
+const LandingPage    = lazy(() => import('./pages/LandingPage'));
+const Dashboard      = lazy(() => import('./pages/Dashboard'));
+const SubmitReport   = lazy(() => import('./pages/SubmitReport'));
 const IncidentDetails = lazy(() => import('./pages/IncidentDetails'));
-const PriorityQueue = lazy(() => import('./pages/PriorityQueue'));
+const PriorityQueue  = lazy(() => import('./pages/PriorityQueue'));
 const InteractiveMap = lazy(() => import('./pages/InteractiveMap'));
-const Operations = lazy(() => import('./pages/Operations'));
-const Login = lazy(() => import('./pages/Login'));
-const Register = lazy(() => import('./pages/Register'));
-const Profile = lazy(() => import('./pages/Profile'));
-const Settings = lazy(() => import('./pages/Settings'));
-const NotFound = lazy(() => import('./pages/NotFound'));
+const Operations     = lazy(() => import('./pages/Operations'));
+const Profile        = lazy(() => import('./pages/Profile'));
+const Settings       = lazy(() => import('./pages/Settings'));
+const NotFound       = lazy(() => import('./pages/NotFound'));
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<Layout />}>
-          <Route path="/login" element={<Suspense fallback={<LoadingState label="Loading login…" />}><Login /></Suspense>} />
-          <Route path="/register" element={<Suspense fallback={<LoadingState label="Loading register…" />}><Register /></Suspense>} />
+        {/* Public landing / auth page — no sidebar */}
+        <Route
+          path="/"
+          element={
+            <Suspense fallback={<LoadingState label="Loading…" />}>
+              <LandingPage />
+            </Suspense>
+          }
+        />
 
+        {/* App shell with sidebar */}
+        <Route element={<Layout />}>
           <Route element={<ProtectedRoute />}>
             <Route
-              index
+              path="/dashboard"
               element={
                 <Suspense fallback={<LoadingState label="Loading dashboard…" />}>
                   <Dashboard />

@@ -31,12 +31,11 @@ export default function ProtectedRoute() {
     };
   }, []);
 
-  if (!sessionReady) {
-    return null;
-  }
+  if (!sessionReady) return null;
 
+  // Redirect to landing page (not /login) when unauthenticated
   if (!hasSession) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    return <Navigate to="/" replace state={{ from: location }} />;
   }
 
   return <Outlet />;

@@ -51,6 +51,7 @@ import { ErrorState, LoadingState, EmptyState } from '../components/StatusPill';
 import ToastViewport from '../components/ToastViewport';
 import { categoryConfig, formatRelativeTime, formatTimestamp, formatMetricValue } from '../lib/format';
 import { useToasts } from '../hooks/useToasts';
+import { useAuth } from '../hooks/useAuth';
 
 const PIE_COLORS = ['#dc2626', '#ea580c', '#ca8a04', '#16a34a', '#0ea5e9', '#64748b'];
 const PRIORITY_FILTERS = ['all', 'critical', 'high', 'medium', 'low'] as const;
@@ -76,6 +77,8 @@ export default function Dashboard() {
   const [simulationStatus, setSimulationStatus] = useState<Record<string, unknown>>({ status: 'idle', total: 0, completed: 0, progress: 0, message: 'No simulation running.' });
   const { toasts, pushToast, dismissToast } = useToasts();
   const navigate = useNavigate();
+  const { role } = useAuth();
+  const isAdmin = role === 'administrator';
 
   const loadDashboard = useCallback(async (showSpinner = true) => {
     if (showSpinner) setLoading(true);
@@ -212,9 +215,11 @@ export default function Dashboard() {
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} /> Refresh now
           </button>
-          <button type="button" onClick={() => void runDemoSimulation()} disabled={simulating} className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-500/15 px-4 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-500/25 disabled:opacity-70">
-            <Sparkles className="h-4 w-4" /> {simulating ? 'Running simulation…' : 'Run Disaster Simulation'}
-          </button>
+            {isAdmin && (
+            <button type="button" onClick={() => void runDemoSimulation()} disabled={simulating} className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-500/15 px-4 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-500/25 disabled:opacity-70">
+              <Sparkles className="h-4 w-4" /> {simulating ? 'Running simulation…' : 'Run Disaster Simulation (Admin)'}
+            </button>
+          )}
           <Link to="/submit" className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-500/15 px-4 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-500/25">
             <BellRing className="h-4 w-4" /> New incident intake
           </Link>
@@ -314,32 +319,40 @@ export default function Dashboard() {
             <div className="rounded-full bg-amber-50 px-3 py-1 text-sm font-medium text-amber-700">{averageUrgency}% avg urgency</div>
           </div>
           <div className="mt-4 h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data.urgency_trend || []} isAnimationActive>
-                <defs>
-                  {[
-                    ['#dc2626', 'crit'],
-                    ['#ea580c', 'high'],
-                    ['#ca8a04', 'med'],
-                    ['#16a34a', 'low'],
-                  ].map(([color, id]) => (
-                    <linearGradient key={id} id={id} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={color} stopOpacity={0.4} />
-                      <stop offset="95%" stopColor={color} stopOpacity={0} />
-                    </linearGradient>
-                  ))}
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="time" tick={{ fontSize: 12 }} stroke="#94a3b8" />
-                <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" />
-                <Tooltip />
-                <Legend />
-                <Area type="monotone" dataKey="critical" stroke="#dc2626" fill="url(#crit)" />
-                <Area type="monotone" dataKey="high" stroke="#ea580c" fill="url(#high)" />
-                <Area type="monotone" dataKey="medium" stroke="#ca8a04" fill="url(#med)" />
-                <Area type="monotone" dataKey="low" stroke="#16a34a" fill="url(#low)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            {(data.urgency_trend ?? []).length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={data.urgency_trend} isAnimationActive>
+                  <defs>
+                    {[
+                      ['#dc2626', 'crit'],
+                      ['#ea580c', 'high'],
+                      ['#ca8a04', 'med'],
+                      ['#16a34a', 'low'],
+                    ].map(([color, id]) => (
+                      <linearGradient key={id} id={id} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={color} stopOpacity={0.4} />
+                        <stop offset="95%" stopColor={color} stopOpacity={0} />
+                      </linearGradient>
+                    ))}
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="time" tick={{ fontSize: 12 }} stroke="#94a3b8" />
+                  <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" />
+                  <Tooltip />
+                  <Legend />
+                  <Area type="monotone" dataKey="critical" stroke="#dc2626" fill="url(#crit)" />
+                  <Area type="monotone" dataKey="high" stroke="#ea580c" fill="url(#high)" />
+                  <Area type="monotone" dataKey="medium" stroke="#ca8a04" fill="url(#med)" />
+                  <Area type="monotone" dataKey="low" stroke="#16a34a" fill="url(#low)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-200">
+                <Activity className="h-8 w-8 text-slate-300" />
+                <p className="text-sm text-slate-400">No incident data yet.</p>
+                <p className="text-xs text-slate-400">Submit reports to populate the trend chart.</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -352,17 +365,24 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="mt-4 h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={data.category_distribution || []} dataKey="value" nameKey="name" innerRadius={46} outerRadius={78} paddingAngle={2} isAnimationActive>
-                    {(data.category_distribution || []).map((_, i) => (
-                      <Cell key={`${_.name}-${i}`} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
+              {(data.category_distribution ?? []).length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={data.category_distribution} dataKey="value" nameKey="name" innerRadius={46} outerRadius={78} paddingAngle={2} isAnimationActive>
+                      {data.category_distribution.map((_, i) => (
+                        <Cell key={`${_.name}-${i}`} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-200">
+                  <p className="text-sm text-slate-400">No category data yet.</p>
+                  <p className="text-xs text-slate-400">Submit reports to see distribution.</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -374,15 +394,22 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="mt-4 h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData} isAnimationActive>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="#94a3b8" />
-                  <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" />
-                  <Tooltip />
-                  <Bar dataKey="score" radius={[8, 8, 0, 0]} fill="#0f172a" />
-                </BarChart>
-              </ResponsiveContainer>
+              {barData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={barData} isAnimationActive>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="#94a3b8" />
+                    <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" />
+                    <Tooltip />
+                    <Bar dataKey="score" radius={[8, 8, 0, 0]} fill="#0f172a" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-200">
+                  <p className="text-sm text-slate-400">No urgency data yet.</p>
+                  <p className="text-xs text-slate-400">Submit reports to populate this chart.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -399,7 +426,9 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="max-h-80 space-y-2 overflow-y-auto px-5 py-4">
-            {(data.activity_feed ?? []).map((item, index) => (
+            {(data.activity_feed ?? []).length === 0 ? (
+              <p className="py-4 text-center text-sm text-slate-400">No activity yet. Dispatch teams to see updates here.</p>
+            ) : (data.activity_feed ?? []).map((item, index) => (
               <div key={`${item.timestamp}-${index}`} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
                 <div className="mt-0.5 rounded-full bg-cyan-600 p-1.5 text-white">
                   <Activity className="h-3.5 w-3.5" />

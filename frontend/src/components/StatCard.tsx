@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 
 interface StatCardProps {
   label: string;
-  value: number;
+  value: number | string;
   icon: LucideIcon;
   accent?: string;
   loading?: boolean;
@@ -30,7 +30,7 @@ export default function StatCard({
         </p>
         {description ? <p className="mt-1 text-xs text-slate-500">{description}</p> : null}
       </div>
-      <div className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ${accent}`}>
+      <div className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ${accent} transition-transform duration-200 group-hover:scale-110`}>
         <Icon className="h-5 w-5" aria-hidden />
       </div>
     </div>
@@ -38,7 +38,7 @@ export default function StatCard({
 
   if (!clickable) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+      <div className="group rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
         {content}
       </div>
     );
@@ -48,9 +48,10 @@ export default function StatCard({
     <button
       type="button"
       onClick={onClick}
-      className="rounded-2xl border border-slate-200 bg-white/90 p-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+      className="group rounded-2xl border border-slate-200 bg-white/90 p-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-slate-900/10"
     >
       {content}
     </button>
   );
 }
+
